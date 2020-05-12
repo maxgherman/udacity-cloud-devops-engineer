@@ -1,0 +1,79 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS cluster'
+
+Parameters:
+
+  Environment:
+    Description: Environment name, used as a prefix for resources
+    Type: String
+
+Resources:
+
+  ClusterInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      RoleName: !Sub "${Environment}-EKS-CLUSTER-ROLE"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+  
+  ClusterInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref ClusterInstanceRole
+
+  ClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EKS Cluster security group
+      GroupName: !Sub "${Environment}-EKS-CLUSTER-SEC-GROUP"
+      VpcId:
+        Fn::ImportValue: !Sub "${Environment}-VPC"
+      Tags:
+      - Key: !Sub "kubernetes.io/cluster/${Environment}-EKS-CLUSTER"
+        Value: 'owned'
+      - Key: 'Name'
+        Value: !Sub "${Environment}-EKS-CLUSTER-SEC-GROUP"
+
+  Cluster:
+    Type: "AWS::EKS::Cluster"
+    Properties:
+      Name: !Sub "${Environment}-EKS-CLUSTER"
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref ClusterSecurityGroup
+        SubnetIds:
+          - Fn::ImportValue: !Sub "${Environment}-Subnet01"
+          - Fn::ImportValue: !Sub "${Environment}-Subnet02"
+          - Fn::ImportValue: !Sub "${Environment}-Subnet03"
+      RoleArn: !GetAtt ClusterInstanceRole.Arn
+      Version: 1.16
+
+Outputs:
+
+  ClusterSecurityGroup:
+    Description: Control plane security group
+    Value: !Ref ClusterSecurityGroup
+    Export:
+      Name: !Sub "${Environment}-EKS-CLUSTER-SEC-GROUP"
+  
+  Cluster:
+    Description: Cluster name
+    Value: !Ref Cluster
+    Export:
+      Name: !Sub "${Environment}-EKS-CLUSTER"
+  

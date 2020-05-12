@@ -1,0 +1,37 @@
+{
+  "name": "home-statistics",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-scripts": "3.4.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "lint": "eslint src --max-warnings=0",
+    "build": "react-scripts build",
+    "data": "./scripts/get-data.sh",
+    "test": "react-scripts test"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "mapbox-gl": "1.10.0",
+    "react-map-gl": "5.2.5",
+    "react-map-gl-geocoder": "2.0.11"
+  }
+}

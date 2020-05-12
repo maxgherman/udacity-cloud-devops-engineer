@@ -1,0 +1,99 @@
+---
+Description: >
+  Network infrastructure CloudFormation template.
+
+
+
+Parameters:
+  Environment:
+    Description: Environment name, used as a prefix for resources
+    Type: String
+
+  VpcCIDR:
+    Description: CIRD IP range for the VPC (default - 10.0.0.0/16)
+    Type: String
+    Default: 10.0.0.0/16
+
+  Subnet1CIDR:
+    Description: CIRD IP range for the subnet 1 (Availability Zone 1) (default - 10.0.0.0/24)
+    Type: String
+    Default: 10.0.0.0/24
+
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: !Ref VpcCIDR
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${Environment}-VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${Environment}-GATEWAY
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${Environment}-ROUTING-TABLE
+
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Ref Subnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${Environment}-SUBNET-1
+
+  Subnet1RTAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1
+      RouteTableId: !Ref RouteTable
+  
+Outputs:
+  VPCID:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${Environment}-VPCID
+
+  SubnetID1:
+    Description: Subnet-1 ID
+    Value: !Ref Subnet1
+    Export:
+      Name: !Sub ${Environment}-SUBNET-1

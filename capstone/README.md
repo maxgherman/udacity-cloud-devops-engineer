@@ -1,0 +1,31 @@
+# Udacity capstone project
+
+- [x] **Create React App** based application showing COVID spread statistics for NSW, Australia
+    - Source: https://www.nsw.gov.au/covid-19/find-facts-about-covid-19
+- [x] Docker container for the static website serving using NGINX
+    - Container registry: https://hub.docker.com/r/maxgherman/capstone
+- [x] Infrastructure provisioning using CouldFormation
+    - Jenkins specific VPC and ES2 instance
+    - EKS specific VPC, Cluster and EC2 Node instances
+    - AWS user with specific permissions to execute CloudFormation script and interact with the k8s instance.
+- [x] Jenkins deployment pipeline
+    - Lint Dockerfile
+    - Download statists data
+    - Build docker image
+        - Install npm packages
+        - Lint application source files
+        - Run application tests
+        - Create production optimized build
+        - Package into NGINX specific folder for static serving
+    - Push docker image to the registry
+    - Apply k8s deployment (yaml)
+        - Application deployment
+        - Load balancer service
+    - Update k8s deployment with specific docker image tag
+    - Wait for the pods update to finish
+    - Perform post deployment sanity check
+    - Prune docker generated results
+- [x] Kubernetes application
+    - Pod deployments using docker hub image rolling update
+    - Service deployment using internal Load Balancing
+

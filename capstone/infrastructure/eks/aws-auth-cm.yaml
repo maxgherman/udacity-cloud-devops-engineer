@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: arn:aws:iam::342863339545:role/capstone-project-eks-node-group-NodeInstanceRole-PFPWLE16AO9V
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+  mapUsers: |
+    - userarn: arn:aws:iam::342863339545:user/capstone
+      username: capsotone
+      groups:
+        - system:masters

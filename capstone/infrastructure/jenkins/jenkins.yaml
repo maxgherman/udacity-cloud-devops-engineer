@@ -1,0 +1,95 @@
+Description:
+  Jenkins CloudFormation template (EC2 instance).
+
+Parameters:
+  Environment:
+    Description: Environment name, used as a prefix for resources
+    Type: String
+
+  WhiteListIP:
+    Description: Whitelisted IP for SSH connection
+    Type: String
+
+  KeyPairJenkins:
+    Description: KeyPair name to access Jenkins host via SSH
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Default: capstone
+
+  ServerImageId:
+    Description: Jenkins server image id
+    Type: String
+    Default: ami-00a54827eb7ffcd3c # Ubuntu Server 18.04 LTS
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP and SSH access
+      VpcId:
+        Fn::ImportValue: !Sub "${Environment}-VPCID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Sub ${WhiteListIP}
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-JSG
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install default-jdk wget -y
+          cd /home/ubuntu
+          wget --no-check-certificate -qO - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+          sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+          sudo apt-get update -y
+          sudo apt-get install jenkins tidy -y
+          sudo systemctl start jenkins
+          sudo systemctl enable jenkins
+          sudo systemctl status jenkins
+      SecurityGroupIds:
+        - Ref: SecurityGroup
+      SubnetId:
+        Fn::ImportValue: !Sub "${Environment}-SUBNET-1"
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdk"
+          Ebs:
+            VolumeType: "gp2"
+            VolumeSize: "10"
+            DeleteOnTermination: true
+      ImageId: !Ref ServerImageId
+      InstanceType: t3.small
+      KeyName: !Sub ${KeyPairJenkins}
+
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain:
+        Fn::ImportValue: !Sub "${Environment}-VPCID"
+
+  EIPAssociation0:
+    Type: AWS::EC2::EIPAssociation
+    DependsOn:
+      - Instance
+      - EIP
+    Properties:
+      InstanceId:
+        Ref: Instance
+      AllocationId:
+        Fn::GetAtt:
+          - EIP
+          - AllocationId
+
+Outputs:
+  Website:
+    Description: EC2 instance DNS
+    Value: !Join ['', ['http://', !GetAtt 'Instance.PublicDnsName', ':8080']]

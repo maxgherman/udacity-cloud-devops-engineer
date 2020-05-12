@@ -1,0 +1,43 @@
+Description:
+  Infrastructure management user CloudFormation template.
+  
+Resources:
+  
+  CapstoneSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: 'Capstone user secret'
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "capstone"}'
+        GenerateStringKey: password
+        IncludeSpace: False
+        ExcludeLowercase: False
+        ExcludeUppercase: False
+        PasswordLength: 15
+        ExcludeCharacters: '|;,."<>%`'
+
+  Group:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: capstone
+      Path: /
+      Policies:
+        - PolicyName: String
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action: 
+                  - "ec2:*"
+                  - "cloudformation:*"
+                  - "secretmanager:*"
+                Resource: "*"
+  
+  CapstoneUser:
+    Type: AWS::IAM::User
+    Properties: 
+      Groups:
+        - capstone
+      LoginProfile:
+        Password: !Join ['', ['{{resolve:secretsmanager:', !Ref CapstoneSecret, ':SecretString:password}}' ]]
+      UserName: !Join ['', ['{{resolve:secretsmanager:', !Ref CapstoneSecret, ':SecretString:username}}' ]]

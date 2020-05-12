@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "CapstoneDev"
+  },
+  {
+    "ParameterKey": "WhiteListIP",
+    "ParameterValue": "119.18.3.122/32"
+  }
+]
