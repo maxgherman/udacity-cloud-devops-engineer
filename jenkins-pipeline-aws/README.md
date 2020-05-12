@@ -3,6 +3,8 @@
 
 This project consist of the manual infrastructure setup for the S3 static web site deployment using Jenkins pipeline.
 
+Create a pipeline that spins up three servers and uses Ansible to deploy an application on the servers. Create another pipeline to confirm that servers were configured as expected. Use the “Blue/Green” deployment strategy to deploy additional features to those servers.
+
 ### Steps outline:
 
 - AWS Steps
