@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from flask.logging import create_logger
+from functools import wraps
 import logging
+import os
 
 import pandas as pd
 from sklearn.externals import joblib
@@ -9,6 +11,17 @@ from sklearn.preprocessing import StandardScaler
 app = Flask(__name__)
 LOG = create_logger(app)
 LOG.setLevel(logging.INFO)
+
+API_KEY = os.environ.get("PREDICT_API_KEY")
+
+def require_api_key(view_func):
+    """Requires a valid X-API-Key header to access the decorated view"""
+    @wraps(view_func)
+    def wrapped(*args, **kwargs):
+        if not API_KEY or request.headers.get("X-API-Key") != API_KEY:
+            return jsonify({"error": "Unauthorized"}), 401
+        return view_func(*args, **kwargs)
+    return wrapped
 
 def scale(payload):
     """Scales Payload"""
@@ -24,6 +37,7 @@ def home():
     return html.format(format)
 
 @app.route("/predict", methods=['POST'])
+@require_api_key
 def predict():
     """Performs an sklearn prediction
         
@@ -69,4 +83,4 @@ def predict():
 if __name__ == "__main__":
     # load pretrained model as clf
     clf = joblib.load("./model_data/boston_housing_prediction.joblib")
-    app.run(host='0.0.0.0', port=80, debug=True) # specify port=80
+    app.run(host=os.environ.get("APP_HOST", "127.0.0.1"), port=80, debug=False) # specify port=80
